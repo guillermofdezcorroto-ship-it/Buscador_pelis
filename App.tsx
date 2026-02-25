@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExcelLoader } from './components/ExcelLoader';
 import { MovieSearch } from './components/MovieSearch';
-import { parseExcelFile, searchMovieInRecords } from './services/excelService';
+import { parseExcelFile, parseExcelFromUrl, searchMovieInRecords } from './services/excelService';
 import { getMovieInsights, getSmartSuggestions } from './services/geminiService';
 import { MovieRecord, SearchResult } from './types';
-import { Film, AlertCircle, Info, Star, Bookmark, Hash } from 'lucide-react';
+import { Film, AlertCircle, Info, Star, Bookmark, Hash, Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [movies, setMovies] = useState<MovieRecord[]>([]);
@@ -13,6 +13,28 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<SearchResult | null>(null);
+  const [autoLoadError, setAutoLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadDefaultExcel = async () => {
+      setIsLoading(true);
+      try {
+        // Attempt to load the default file from the same directory
+        // This works for GitHub Pages if the file is in the same folder
+        const defaultFileName = 'LISTADO_PELIS.xlsx';
+        const records = await parseExcelFromUrl(`./${defaultFileName}`);
+        setMovies(records);
+        setFileName(defaultFileName);
+      } catch (error) {
+        console.warn("Could not auto-load LISTADO_PELIS.xlsx", error);
+        setAutoLoadError("No se pudo cargar el archivo automático. Por favor, sube uno manualmente.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDefaultExcel();
+  }, []);
 
   const handleFileLoaded = async (file: File) => {
     setIsLoading(true);
@@ -77,7 +99,15 @@ const App: React.FC = () => {
           onFileLoaded={handleFileLoaded} 
           isLoaded={movies.length > 0} 
           fileName={fileName} 
+          isLoading={isLoading}
         />
+
+        {autoLoadError && !movies.length && !isLoading && (
+          <div className="flex items-center gap-2 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl text-orange-400 text-sm animate-in fade-in slide-in-from-top-2">
+            <AlertCircle size={18} />
+            <span>{autoLoadError}</span>
+          </div>
+        )}
 
         <MovieSearch 
           onSearch={handleSearch} 
