@@ -1,0 +1,5 @@
+{
+  "name": "Buscador Peliculas en BBDD",
+  "description": "A professional movie database searcher that parses local Excel files and uses Gemini AI to provide detailed movie insights and smart search suggestions.",
+  "requestFramePermissions": []
+}
